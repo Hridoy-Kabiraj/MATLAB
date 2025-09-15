@@ -1,0 +1,77 @@
+av = 16;   % Volume term (MeV)
+as = 18;   % Surface term (MeV)
+ac = 0.72; % Coulomb term (MeV)
+aa = 23.5; % Asymmetry term (MeV)
+ap = 11;   % Pairing term (MeV)
+
+magic = [2 8 20 28 50 82 126];
+
+Amax = 240;
+B_volume = zeros(1,Amax);
+B_surface = zeros(1,Amax);
+B_Coulomb = zeros(1,Amax);
+B_asym = zeros(1,Amax);
+B_pairing = zeros(1,Amax);
+B_shell = zeros(1,Amax);
+B_total = zeros(1,Amax);
+
+for A = 2:Amax
+   
+    Z = round(A/2);  
+    N = A - Z;
+    
+    % Volume term
+    Bv = av*A;
+    
+    % Surface term
+    Bs = -as*A^(2/3);
+    
+    % Coulomb term
+    Bc = -ac*Z*(Z-1)/A^(1/3);
+    
+    % Asymmetry term
+    Ba = -aa*(N-Z)^2 / A;
+    
+    % Pairing term δ
+    Bp = ((-1)^Z + (-1)^N) * (ap / sqrt(A));
+    
+    
+    % Shell correction η
+    eta = 0;
+    for m = magic
+        if abs(Z-m) <= 1 || abs(N-m) <= 1
+            eta = 2;
+            break
+        end
+    end
+    
+    % Store contributions
+    B_volume(A) = Bv/A;
+    B_surface(A) = Bs/A;
+    B_Coulomb(A) = Bc/A;
+    B_asym(A) = Ba/A;
+    B_pairing(A) = Bp/A;
+    B_shell(A) = eta/A;
+    
+    % Total binding energy
+    B_total(A) = (Bv + Bs + Bc + Ba + Bp + eta)/A;
+end
+
+data = readtable('binding_energy_per_nucleon.csv');  % read data from the csv
+exp_BA = data.B_A_EXP_MeV_; % extract the experimental BA data column
+exp_A = data.A;
+
+figure;
+plot(2:Amax, B_volume(2:end), 'LineWidth', 1); hold on;
+plot(2:Amax, B_volume(2:end) + B_surface(2:end), 'LineWidth', 1);
+plot(2:Amax, B_volume(2:end) + B_surface(2:end) + B_Coulomb(2:end), 'LineWidth', 1);
+plot(2:Amax, B_volume(2:end) + B_surface(2:end) + B_Coulomb(2:end) + B_asym(2:end), 'LineWidth', 1);
+plot(2:Amax, B_volume(2:end) + B_surface(2:end) + B_Coulomb(2:end) + B_asym(2:end) + B_pairing(2:end), 'LineWidth', 1);
+plot(2:Amax, B_volume(2:end) + B_surface(2:end) + B_Coulomb(2:end) + B_asym(2:end) + B_pairing(2:end) + B_shell(2:end), 'LineWidth', 1);
+plot(2:Amax, B_total(2:end), 'k', 'LineWidth', 1);
+plot(exp_A, exp_BA, 'r.-', 'Linewidth', 1.5);
+
+xlabel('Mass Number A'); ylabel('Binding Energy (MeV)');
+title('Semi-Empirical Mass Formula Contributions');
+legend('Volume','Surface','Coulomb','Asymmetry','Pairing','Shell','Total','Experimental' ,'Location','northeast');
+grid on;
