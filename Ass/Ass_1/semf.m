@@ -40,7 +40,7 @@ for A = 2:Amax
     eta = 0;
     for m = magic
         if abs(Z-m) <= 1 || abs(N-m) <= 1
-            eta = 2;
+            eta = 0;
             break
         end
     end
