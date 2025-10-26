@@ -18,28 +18,42 @@ decayChain = @(t, N) [
 ];
 
 % Initial condition (atoms)
-N0 = [1/lambda_1, 0, 0];
+N0 = [1/lambda_1; 0; 0]; % Use column vector for consistency
 
 % Time span (in days)
 tSpan = [0, 1];
 
-% Solve ODEs
-[t, N] = ode45(decayChain, tSpan, N0);
+% Solve with ode45
+[t_ode45, N_ode45] = ode45(decayChain, tSpan, N0);
+% Compute activities
+A_Ce_ode45 = lambda_1 * N_ode45(:, 1);
+A_Pr_m_ode45 = lambda_2 * N_ode45(:, 2);
+A_Pr_ode45 = lambda_3 * N_ode45(:, 3);
 
-% Compute activities (A = λ * N)
-A_Ce = lambda_1 * N(:, 1);
-A_Pr_m = lambda_2 * N(:, 2);
-A_Pr = lambda_3 * N(:, 3);
+% Solve with rk4_solve
+h = 0.001; % Define a step size for RK4
+[t_rk4, N_rk4] = rk4_solver(decayChain, tSpan, N0, h);
+% Compute activities
+A_Ce_rk4 = lambda_1 * N_rk4(:, 1);
+A_Pr_m_rk4 = lambda_2 * N_rk4(:, 2);
+A_Pr_rk4 = lambda_3 * N_rk4(:, 3);
+
 
 figure;
-plot(t, A_Ce, 'b', 'LineWidth', 1.5); hold on;
-plot(t, A_Pr_m, 'r', 'LineWidth', 1.5);
-plot(t, A_Pr, 'g', 'LineWidth', 1.5);
+% Plot ode45 results 
+plot(t_ode45, A_Ce_ode45, 'b-', 'LineWidth', 2, 'DisplayName', '^{144}Ce (ode45)'); hold on;
+plot(t_ode45, A_Pr_m_ode45, 'r-', 'LineWidth', 2, 'DisplayName', '^{144m}Pr (ode45)');
+plot(t_ode45, A_Pr_ode45, 'g-', 'LineWidth', 2, 'DisplayName', '^{144}Pr (ode45)');
+
+% Plot rk4 results (
+plot(t_rk4, A_Ce_rk4, 'b--', 'LineWidth', 1.5, 'DisplayName', '^{144}Ce (RK4)');
+plot(t_rk4, A_Pr_m_rk4, 'r--', 'LineWidth', 1.5, 'DisplayName', '^{144m}Pr (RK4)');
+plot(t_rk4, A_Pr_rk4, 'g--', 'LineWidth', 1.5, 'DisplayName', '^{144}Pr (RK4)');
 hold off;
 
-legend('^{144}Ce', '^{144m}Pr', '^{144}Pr', 'Location', 'best');
+legend('Location', 'best');
 xlabel('Time (days)');
 ylabel('Activity (decays/day)');
-title('Radioactive Decay Chain: ^{144}Ce → ^{144m}Pr → ^{144}Pr');
+title('RK4 vs ode45 Comparison: ^{144}Ce → ^{144m}Pr → ^{144}Pr');
 subtitle('Secular Equilibrium Condition');
 grid on;

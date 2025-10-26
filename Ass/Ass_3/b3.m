@@ -13,36 +13,54 @@ decayChain = @(t, N) [
 ];
 
 %% Initial conditions
-N0 = [1/lambda_Mo99, 0, 0];   % Initial number of nuclei
+N0 = [1/lambda_Mo99; 0; 0];   % Use column vector
 
 %% Time span
-tSpan = linspace(0, 100, 1000);  % hours
+tSpan = [0, 100];  % hours
 
-%% Solve the ODE system
-[t, N] = ode45(decayChain, tSpan, N0);
+%% Solve with ode45
+% Use a finer tSpan for ode45 output if needed, but [t0, tf] is fine for solving
+[t_ode45, N_ode45] = ode45(decayChain, tSpan, N0);
 
-%% Plot Activity vs Time (linear)
+%% Solve with rk4_solver
+h = 0.1; % Define step size for RK4
+[t_rk4, N_rk4] = rk4_solver(decayChain, tSpan, N0, h);
+
 figure;
-plot(t, lambda_Mo99*N(:,1), 'm', ...
-     t, lambda_Tc99m*N(:,2), 'c', ...
-     t, lambda_Tc99*N(:,3), 'b', 'LineWidth', 1.5);
+% ode45 results
+plot(t_ode45, lambda_Mo99*N_ode45(:,1), 'm-', 'LineWidth', 2, 'DisplayName', '^{99}Mo (ode45)'); hold on;
+plot(t_ode45, lambda_Tc99m*N_ode45(:,2), 'c-', 'LineWidth', 2, 'DisplayName', '^{99m}Tc (ode45)');
+plot(t_ode45, lambda_Tc99*N_ode45(:,3), 'b-', 'LineWidth', 2, 'DisplayName', '^{99}Tc (ode45)');
+
+% rk4 results
+plot(t_rk4, lambda_Mo99*N_rk4(:,1), 'm--', 'LineWidth', 1.5, 'DisplayName', '^{99}Mo (RK4)');
+plot(t_rk4, lambda_Tc99m*N_rk4(:,2), 'c--', 'LineWidth', 1.5, 'DisplayName', '^{99m}Tc (RK4)');
+plot(t_rk4, lambda_Tc99*N_rk4(:,3), 'b--', 'LineWidth', 1.5, 'DisplayName', '^{99}Tc (RK4)');
+hold off;
 
 xlabel('Time (hours)');
 ylabel('Activity (decays/hour)');
-legend('^{99}Mo (Parent)', '^{99m}Tc (Intermediate)', '^{99}Tc (Daughter)');
-title('Radioactive Decay Chain: ^{99}Mo → ^{99m}Tc → ^{99}Tc');
+legend('Location', 'best');
+title('RK4 vs ode45 Comparison: ^{99}Mo → ^{99m}Tc → ^{99}Tc');
 subtitle('Transient Equilibrium Demonstration');
 grid on;
 
 %% Plot Number of Atoms (semilog)
 figure;
-semilogy(t, N(:,1), 'm', 'DisplayName', '^{99}Mo'); hold on;
-semilogy(t, N(:,2), 'c', 'DisplayName', '^{99m}Tc');
-semilogy(t, N(:,3), 'b', 'DisplayName', '^{99}Tc');
+% ode45 results 
+semilogy(t_ode45, N_ode45(:,1), 'm-', 'LineWidth', 2, 'DisplayName', '^{99}Mo (ode45)'); hold on;
+semilogy(t_ode45, N_ode45(:,2), 'c-', 'LineWidth', 2, 'DisplayName', '^{99m}Tc (ode45)');
+semilogy(t_ode45, N_ode45(:,3), 'b-', 'LineWidth', 2, 'DisplayName', '^{99}Tc (ode45)');
+
+% rk4 results 
+semilogy(t_rk4, N_rk4(:,1), 'm--', 'LineWidth', 1.5, 'DisplayName', '^{99}Mo (RK4)');
+semilogy(t_rk4, N_rk4(:,2), 'c--', 'LineWidth', 1.5, 'DisplayName', '^{99m}Tc (RK4)');
+semilogy(t_rk4, N_rk4(:,3), 'b--', 'LineWidth', 1.5, 'DisplayName', '^{99}Tc (RK4)');
+hold off;
 
 xlabel('Time (hours)');
 ylabel('Relative Number of Atoms');
-legend('show');
-title('Radioactive Decay Chain of ^{99}Mo to ^{99}Tc');
+legend('Location', 'best');
+title('RK4 vs ode45 Comparison: Number of Atoms');
 subtitle('Transient Equilibrium');
 grid on;
